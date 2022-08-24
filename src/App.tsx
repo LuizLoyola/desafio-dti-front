@@ -57,7 +57,7 @@ function App() {
     setError("");
     setSuccess("");
     axios
-      .post("https://localhost:5001/api/loan", {
+      .post("/api/loan", {
         type,
         document,
         name,
