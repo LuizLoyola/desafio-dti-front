@@ -1,7 +1,9 @@
 import React, { ReactNode, useState } from "react";
 import "./App.css";
 import {
+  Alert,
   Button,
+  CircularProgress,
   Container,
   FormControl,
   FormControlLabel,
@@ -25,6 +27,8 @@ function App() {
   const [currentDebt, setCurrentDebt] = useState("");
   const [requestedLoan, setRequestedLoan] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleType = (event: React.ChangeEvent<HTMLInputElement>) => {
     let t = event.target.value as PersonType;
@@ -50,6 +54,8 @@ function App() {
 
   const triggerRequestLoan = () => {
     setLoading(true);
+    setError("");
+    setSuccess("");
     axios
       .post("https://localhost:5001/api/loan", {
         type,
@@ -59,10 +65,11 @@ function App() {
         requestedLoan,
       })
       .then((result) => {
-        alert(result.data);
+        console.log(result);
+        setSuccess(result.data);
       })
-      .catch(() => {
-        alert("Erro ao enviar solicitação!");
+      .catch((error) => {
+        setError(error.response.data || "Erro desconhecido");
       })
       .finally(() => {
         setLoading(false);
@@ -86,11 +93,13 @@ function App() {
               onChange={handleType}
             >
               <FormControlLabel
+                disabled={loading}
                 value="pf"
                 control={<Radio />}
                 label="Pessoa física"
               />
               <FormControlLabel
+                disabled={loading}
                 value="pj"
                 control={<Radio />}
                 label="Pessoa jurídica"
@@ -108,10 +117,11 @@ function App() {
               mask={type === "pf" ? "999.999.999-99" : "99.999.999/9999-99"}
               value={document}
               onChange={handleDocument}
+              disabled={loading}
             >
               {
                 ((inputProps: any) => {
-                  return <Input {...inputProps} />;
+                  return <Input disabled={loading} {...inputProps} />;
                 }) as unknown as ReactNode
               }
             </InputMask>
@@ -122,18 +132,24 @@ function App() {
             <InputLabel htmlFor="name">
               {type === "pf" ? "Nome" : "Razão social"}
             </InputLabel>
-            <Input id="name" value={name} onChange={handleName}></Input>
+            <Input
+              id="name"
+              value={name}
+              onChange={handleName}
+              disabled={loading}
+            ></Input>
           </FormControl>
         </Grid>
         <Grid item xs={6}>
           <FormControl fullWidth variant="standard">
             <InputLabel htmlFor="current-debt">
-              Valor do empréstimo solicitado
+              Valor da dívida atual
             </InputLabel>
             <Input
               id="current-debt"
               value={currentDebt}
               onChange={handleCurrentDebt}
+              disabled={loading}
               startAdornment={
                 <InputAdornment position="start">R$</InputAdornment>
               }
@@ -149,6 +165,7 @@ function App() {
               id="requested-loan"
               value={requestedLoan}
               onChange={handleRequestedLoan}
+              disabled={loading}
               startAdornment={
                 <InputAdornment position="start">R$</InputAdornment>
               }
@@ -156,9 +173,20 @@ function App() {
           </FormControl>
         </Grid>
         <Grid item xs={12}>
-          <Button fullWidth variant="contained" onClick={triggerRequestLoan}>
-            Solicitar empréstimo
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={triggerRequestLoan}
+            disabled={
+              loading || !document || !name || !currentDebt || !requestedLoan
+            }
+          >
+            {!loading ? "Solicitar empréstimo" : <CircularProgress size={24} />}
           </Button>
+        </Grid>
+        <Grid item xs={12}>
+          {error && <Alert severity="error">{error}</Alert>}
+          {success && <Alert severity="success">{success}</Alert>}
         </Grid>
       </Grid>
     </Container>
